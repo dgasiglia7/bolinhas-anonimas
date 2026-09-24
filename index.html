@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bolinhas Anônimas</title>
+  <meta name="description" content="Vídeos de border collie, com muito blue merle.">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f0f0f" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="Bolinhas Anônimas">
+  <meta property="og:description" content="Vídeos de border collie, com muito blue merle.">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__start">
+      <button class="icon-btn only-desktop" id="menuBtn" aria-label="Menu"><span class="ms">menu</span></button>
+      <a class="brand" href="#/" aria-label="Bolinhas Anônimas, início">
+        <img src="assets/logo.svg" alt="" width="34" height="24">
+        <span class="brand__name">Bolinhas<span class="brand__accent"> Anônimas</span></span>
+      </a>
+    </div>
+
+    <form class="search" id="searchForm" role="search">
+      <button type="button" class="icon-btn search__back" id="searchBack" aria-label="Voltar"><span class="ms">arrow_back</span></button>
+      <div class="search__box">
+        <input id="searchInput" type="search" placeholder="Pesquisar" autocomplete="off" aria-label="Pesquisar vídeos">
+      </div>
+      <button class="search__submit" aria-label="Pesquisar"><span class="ms">search</span></button>
+    </form>
+
+    <div class="topbar__end">
+      <button class="icon-btn only-mobile" id="searchOpen" aria-label="Pesquisar"><span class="ms">search</span></button>
+      <button class="create-btn admin-only" id="createBtn"><span class="ms">add</span><span class="create-btn__label">Criar</span></button>
+      <button class="icon-btn" id="themeBtn" aria-label="Alternar tema"><span class="ms">dark_mode</span></button>
+      <button class="icon-btn admin-only" id="settingsBtn" aria-label="Configurações de publicação"><span class="ms">settings</span></button>
+    </div>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <nav>
+      <a class="side-link" href="#/" data-nav="home"><span class="ms">home</span><span>Início</span></a>
+      <a class="side-link" href="#/favoritos" data-nav="favs"><span class="ms">favorite</span><span>Favoritos</span></a>
+      <hr>
+      <h3 class="side-title">Categorias</h3>
+      <div id="sideTags"></div>
+      <div class="admin-only">
+        <hr>
+        <h3 class="side-title">Administração</h3>
+        <button class="side-link" data-action="add"><span class="ms">add_circle</span><span>Adicionar vídeo</span></button>
+        <button class="side-link" data-action="settings"><span class="ms">cloud_upload</span><span>Publicação</span></button>
+      </div>
+      <hr>
+      <p class="side-foot">Feito com carinho para os border collies.<br>Vídeos hospedados no YouTube.</p>
+    </nav>
+  </aside>
+
+  <main id="app" class="main" tabindex="-1"></main>
+
+  <div class="pending-bar" id="pendingBar" hidden>
+    <span id="pendingText"></span>
+    <button class="btn btn--light" id="publishBtn">Publicar</button>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="#/" data-nav="home"><span class="ms">home</span><span>Início</span></a>
+    <button id="bottomSearch"><span class="ms">search</span><span>Buscar</span></button>
+    <button class="bottom-nav__add admin-only" data-action="add" aria-label="Adicionar vídeo"><span class="ms">add</span></button>
+    <a href="#/favoritos" data-nav="favs"><span class="ms">favorite</span><span>Favoritos</span></a>
+    <button class="admin-only" data-action="settings"><span class="ms">cloud_upload</span><span>Publicar</span></button>
+  </nav>
+
+  <!-- Adicionar vídeo -->
+  <dialog class="modal" id="addDialog">
+    <form method="dialog" class="modal__card" id="addForm">
+      <header class="modal__head">
+        <h2>Adicionar vídeo</h2>
+        <button class="icon-btn" value="cancel" formnovalidate aria-label="Fechar"><span class="ms">close</span></button>
+      </header>
+      <label class="field">
+        <span>Link do YouTube</span>
+        <input id="addUrl" type="url" inputmode="url" placeholder="https://youtu.be/..." required autocomplete="off">
+      </label>
+      <div class="add-preview" id="addPreview" hidden>
+        <img id="addThumb" alt="">
+        <p class="add-preview__status" id="addStatus"></p>
+      </div>
+      <label class="field">
+        <span>Título</span>
+        <input id="addTitle" type="text" required maxlength="140">
+      </label>
+      <label class="field">
+        <span>Canal de origem <small>(opcional)</small></span>
+        <input id="addChannel" type="text" maxlength="80">
+      </label>
+      <label class="field">
+        <span>Categorias <small>(separe por vírgula)</small></span>
+        <input id="addTags" type="text" list="tagList" placeholder="Filhotes, Truques">
+        <datalist id="tagList"></datalist>
+      </label>
+      <div class="tag-suggest" id="tagSuggest"></div>
+      <label class="field">
+        <span>Descrição <small>(opcional)</small></span>
+        <textarea id="addDesc" rows="3" maxlength="2000"></textarea>
+      </label>
+      <footer class="modal__foot">
+        <button class="btn btn--ghost" value="cancel" formnovalidate>Cancelar</button>
+        <button class="btn btn--primary" id="addSubmit" value="add">Adicionar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Publicação -->
+  <dialog class="modal" id="settingsDialog">
+    <form method="dialog" class="modal__card" id="settingsForm">
+      <header class="modal__head">
+        <h2>Publicação</h2>
+        <button class="icon-btn" value="cancel" formnovalidate aria-label="Fechar"><span class="ms">close</span></button>
+      </header>
+      <p class="muted">Os vídeos que você adiciona ficam primeiro só neste navegador. Para que todo mundo veja, a página grava o arquivo <code>videos.json</code> direto no repositório do GitHub.</p>
+      <div class="field-row">
+        <label class="field"><span>Repositório</span><input id="cfgRepo" type="text" placeholder="usuario/repositorio" required></label>
+        <label class="field field--small"><span>Branch</span><input id="cfgBranch" type="text" placeholder="main" required></label>
+      </div>
+      <label class="field">
+        <span>Token do GitHub</span>
+        <input id="cfgToken" type="password" autocomplete="off" placeholder="github_pat_...">
+      </label>
+      <details class="help">
+        <summary>Como criar o token (uma vez só)</summary>
+        <ol>
+          <li>Abra <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
+          <li>Em <b>Repository access</b>, escolha <b>Only select repositories</b> e marque este repositório.</li>
+          <li>Em <b>Permissions → Contents</b>, escolha <b>Read and write</b>.</li>
+          <li>Gere o token, copie e cole aqui. Ele fica guardado só neste navegador.</li>
+        </ol>
+      </details>
+      <div class="settings-actions">
+        <button type="button" class="btn btn--ghost" id="downloadJson"><span class="ms">download</span>Baixar videos.json</button>
+        <button type="button" class="btn btn--ghost" id="discardBtn"><span class="ms">undo</span>Descartar alterações</button>
+        <button type="button" class="btn btn--ghost" id="exitAdmin"><span class="ms">logout</span>Sair do modo admin</button>
+      </div>
+      <footer class="modal__foot">
+        <button class="btn btn--ghost" value="cancel" formnovalidate>Fechar</button>
+        <button class="btn btn--primary" value="save">Salvar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

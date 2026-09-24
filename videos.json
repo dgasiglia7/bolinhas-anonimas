@@ -1,0 +1,52 @@
+{
+  "videos": [
+    {
+      "id": "qrNyEa1FRNo",
+      "title": "Hi! I'm Blue | First week with Border Collie blue merle",
+      "channel": "",
+      "tags": ["Filhotes", "Blue merle"],
+      "description": "Vídeo de exemplo. Remova pelo modo administrador quando começar a postar os seus.",
+      "addedAt": "2026-09-24T02:00:00Z"
+    },
+    {
+      "id": "qbIJ3e68lb4",
+      "title": "8 Week Old Border Collie Puppy Blue Merle. Alfie",
+      "channel": "",
+      "tags": ["Filhotes", "Blue merle"],
+      "description": "Vídeo de exemplo.",
+      "addedAt": "2026-09-23T20:00:00Z"
+    },
+    {
+      "id": "mY20343FDiE",
+      "title": "Adventure Walk With Blue Merle Border Collie Puppies",
+      "channel": "",
+      "tags": ["Passeios", "Blue merle"],
+      "description": "Vídeo de exemplo.",
+      "addedAt": "2026-09-22T15:00:00Z"
+    },
+    {
+      "id": "kVnsLwsbvBA",
+      "title": "Border Collie Puppy 10 Months Old (Video Montage)",
+      "channel": "",
+      "tags": ["Crescimento"],
+      "description": "Vídeo de exemplo.",
+      "addedAt": "2026-09-20T12:00:00Z"
+    },
+    {
+      "id": "HVJPKGkXxlw",
+      "title": "Blue Merle Border Collie Puppies",
+      "channel": "",
+      "tags": ["Filhotes", "Blue merle"],
+      "description": "Vídeo de exemplo.",
+      "addedAt": "2026-09-17T12:00:00Z"
+    },
+    {
+      "id": "V4jhTFyM7Ho",
+      "title": "Cute blue merle Border Collie puppy!",
+      "channel": "",
+      "tags": ["Filhotes"],
+      "description": "Vídeo de exemplo.",
+      "addedAt": "2026-09-10T12:00:00Z"
+    }
+  ]
+}
