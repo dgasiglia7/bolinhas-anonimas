@@ -16,13 +16,17 @@ puros), publicado pelo GitHub Pages.
    navegador. Toque em **Publicar** para gravar o `videos.json` no GitHub.
    Em cerca de 1 minuto o site atualiza para todo mundo.
 
-Para o botão **Publicar** funcionar, configure uma vez na engrenagem um
-token do GitHub (fine-grained, com acesso só a este repositório e
-permissão *Contents: Read and write*). O token fica guardado apenas no
-navegador em que você configurou.
+Para editar um vídeo já publicado, toque no lápis ao lado da lixeira.
 
-Sem token, ainda dá para usar **Baixar videos.json** e subir o arquivo
-manualmente no GitHub.
+Para o botão **Publicar** funcionar, cada navegador precisa de uma
+**chave de publicação** (token fine-grained do GitHub, com acesso só a este
+repositório e permissão *Contents: Read and write*). A tela **Publicar no
+site** (engrenagem) mostra se o navegador já tem a chave, testa a chave ao
+salvar e traz o passo a passo para criar uma. A chave fica guardada apenas
+no navegador em que foi colada; em outro computador é preciso colar de novo.
+
+Sem chave, a mesma tela ensina a publicar manualmente: **Baixar lista de
+vídeos** e enviar o `videos.json` pela página de upload do GitHub.
 
 ## Estrutura
 
@@ -34,8 +38,13 @@ manualmente no GitHub.
 
 ## Rodar localmente
 
+No Windows, dê clique duplo em `abrir-site.cmd` (precisa do Node.js). Ele
+sobe um servidor em http://localhost:8000 e abre o navegador; feche a
+janela preta para parar. Em qualquer sistema:
+
 ```sh
-python3 -m http.server 8000
+node tools/servidor-local.mjs
 ```
 
-e abra http://localhost:8000.
+Abrir o `index.html` direto (clique duplo) não funciona: o navegador
+bloqueia a leitura do `videos.json` em endereços `file://`.

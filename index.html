@@ -53,7 +53,7 @@
         <hr>
         <h3 class="side-title">Administração</h3>
         <button class="side-link" data-action="add"><span class="ms">add_circle</span><span>Adicionar vídeo</span></button>
-        <button class="side-link" data-action="settings"><span class="ms">cloud_upload</span><span>Publicação</span></button>
+        <button class="side-link" data-action="settings"><span class="ms">cloud_upload</span><span>Publicar no site</span></button>
       </div>
       <hr>
       <p class="side-foot">Feito com carinho para os border collies.<br>Vídeos hospedados no YouTube.</p>
@@ -79,7 +79,7 @@
   <dialog class="modal" id="addDialog">
     <form method="dialog" class="modal__card" id="addForm">
       <header class="modal__head">
-        <h2>Adicionar vídeo</h2>
+        <h2 id="addHeading">Adicionar vídeo</h2>
         <button class="icon-btn" value="cancel" formnovalidate aria-label="Fechar"><span class="ms">close</span></button>
       </header>
       <label class="field">
@@ -119,35 +119,91 @@
   <dialog class="modal" id="settingsDialog">
     <form method="dialog" class="modal__card" id="settingsForm">
       <header class="modal__head">
-        <h2>Publicação</h2>
+        <h2>Publicar no site</h2>
         <button class="icon-btn" value="cancel" formnovalidate aria-label="Fechar"><span class="ms">close</span></button>
       </header>
-      <p class="muted">Os vídeos que você adiciona ficam primeiro só neste navegador. Para que todo mundo veja, a página grava o arquivo <code>videos.json</code> direto no repositório do GitHub.</p>
-      <div class="field-row">
-        <label class="field"><span>Repositório</span><input id="cfgRepo" type="text" placeholder="usuario/repositorio" required></label>
-        <label class="field field--small"><span>Branch</span><input id="cfgBranch" type="text" placeholder="main" required></label>
+
+      <!-- situação atual deste navegador -->
+      <div class="pub-status">
+        <div class="pub-status__row" id="pubPendingRow">
+          <span class="ms" id="pubPendingIcon">schedule</span>
+          <span id="pubPendingText"></span>
+        </div>
+        <div class="pub-status__row" id="pubKeyRow">
+          <span class="ms" id="pubKeyIcon">key</span>
+          <span id="pubKeyText"></span>
+        </div>
+        <button type="button" class="btn btn--primary pub-status__btn" id="pubPublishBtn"><span class="ms">cloud_upload</span>Publicar agora</button>
       </div>
-      <label class="field">
-        <span>Token do GitHub</span>
-        <input id="cfgToken" type="password" autocomplete="off" placeholder="github_pat_...">
-      </label>
-      <details class="help">
-        <summary>Como criar o token (uma vez só)</summary>
-        <ol>
-          <li>Abra <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
-          <li>Em <b>Repository access</b>, escolha <b>Only select repositories</b> e marque este repositório.</li>
-          <li>Em <b>Permissions → Contents</b>, escolha <b>Read and write</b>.</li>
-          <li>Gere o token, copie e cole aqui. Ele fica guardado só neste navegador.</li>
+
+      <details class="pub-section">
+        <summary>Como funciona a publicação</summary>
+        <ol class="pub-steps">
+          <li><b>Você muda os vídeos.</b> Adicionar, editar ou remover vídeos muda só a sua tela, neste navegador. Esses vídeos aparecem marcados como "Não publicado".</li>
+          <li><b>Você toca em Publicar.</b> A página envia a lista de vídeos para o GitHub, onde o site fica guardado.</li>
+          <li><b>Todo mundo vê.</b> Em cerca de 1 minuto o site atualiza para qualquer pessoa.</li>
         </ol>
+        <p class="pub-note"><span class="ms">devices</span><span>Cada computador, celular ou navegador é separado. Em cada um que você for usar para publicar é preciso: (1) abrir o site com <code>#/admin</code> no fim do endereço e (2) colar a chave de publicação abaixo. Vídeos não publicados não passam de um computador para outro.</span></p>
       </details>
-      <div class="settings-actions">
-        <button type="button" class="btn btn--ghost" id="downloadJson"><span class="ms">download</span>Baixar videos.json</button>
-        <button type="button" class="btn btn--ghost" id="discardBtn"><span class="ms">undo</span>Descartar alterações</button>
-        <button type="button" class="btn btn--ghost" id="exitAdmin"><span class="ms">logout</span>Sair do modo admin</button>
-      </div>
+
+      <details class="pub-section" id="pubKeySection">
+        <summary>Chave de publicação <small>(token do GitHub)</small></summary>
+        <p class="muted">É uma espécie de senha que só serve para atualizar a lista de vídeos deste site. Ela fica guardada <b>só neste navegador</b>. Em outro computador, cole a mesma chave (se você a guardou) ou crie uma nova.</p>
+        <label class="field">
+          <span>Chave</span>
+          <input id="cfgToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_...">
+        </label>
+        <div class="settings-actions">
+          <button type="button" class="btn btn--primary" id="saveTokenBtn"><span class="ms">check</span>Salvar e testar chave</button>
+          <button type="button" class="btn btn--ghost" id="clearTokenBtn"><span class="ms">key_off</span>Apagar chave deste navegador</button>
+        </div>
+        <details class="help">
+          <summary>Não tenho a chave: como criar (leva 2 minutos)</summary>
+          <p class="muted">Precisa ser feito entrando no GitHub com a conta dona do site (<b class="repo-owner"></b>).</p>
+          <ol>
+            <li>Abra <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> e entre na conta, se pedir.</li>
+            <li><b>Token name:</b> um nome para lembrar onde vai usar, por exemplo "Bolinhas - notebook".</li>
+            <li><b>Expiration:</b> escolha a validade (por exemplo, 1 ano). Quando vencer, a publicação avisa "chave inválida ou expirada" e é só criar outra.</li>
+            <li><b>Repository access:</b> escolha <b>Only select repositories</b> e selecione <b class="repo-name"></b>.</li>
+            <li><b>Permissions → Repository permissions → Contents:</b> mude para <b>Read and write</b>. Não precisa mexer em mais nada.</li>
+            <li>Clique em <b>Generate token</b>, copie o código (começa com <code>github_pat_</code>), cole no campo acima e toque em <b>Salvar e testar chave</b>.</li>
+          </ol>
+          <p class="pub-note"><span class="ms">shield</span><span>O GitHub mostra a chave só uma vez. Se quiser usar em outros computadores, guarde-a num lugar seguro, como um gerenciador de senhas. Não publique nem mande a chave em grupos. Se ela vazar, apague-a em <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a> e crie outra.</span></p>
+        </details>
+      </details>
+
+      <details class="pub-section">
+        <summary>Sem chave? Publicar manualmente</summary>
+        <ol class="pub-steps">
+          <li>Toque em <b>Baixar lista de vídeos</b>. O navegador salva um arquivo <code>videos.json</code> na sua pasta de Downloads.</li>
+          <li>Abra a <a class="repo-upload" href="#" target="_blank" rel="noopener">página de envio de arquivos do GitHub</a> (é preciso entrar com a conta dona do site).</li>
+          <li>Arraste o <code>videos.json</code> baixado para a página e clique em <b>Commit changes</b>.</li>
+        </ol>
+        <button type="button" class="btn btn--ghost" id="downloadJson"><span class="ms">download</span>Baixar lista de vídeos</button>
+      </details>
+
+      <details class="pub-section">
+        <summary>Outras opções</summary>
+        <div class="pub-option">
+          <button type="button" class="btn btn--ghost" id="discardBtn"><span class="ms">undo</span>Descartar alterações</button>
+          <p class="muted">Joga fora o que ainda não foi publicado e volta para a lista que está no site.</p>
+        </div>
+        <div class="pub-option">
+          <button type="button" class="btn btn--ghost" id="exitAdmin"><span class="ms">logout</span>Sair do modo admin</button>
+          <p class="muted">Esconde os botões de administração neste navegador. Para voltar, abra o site com <code>#/admin</code> no fim do endereço. A chave continua salva.</p>
+        </div>
+        <details class="help">
+          <summary>Avançado: endereço do repositório</summary>
+          <p class="muted">Só mude se o site for movido para outro repositório.</p>
+          <div class="field-row">
+            <label class="field"><span>Repositório</span><input id="cfgRepo" type="text" placeholder="usuario/repositorio"></label>
+            <label class="field field--small"><span>Branch</span><input id="cfgBranch" type="text" placeholder="main"></label>
+          </div>
+        </details>
+      </details>
+
       <footer class="modal__foot">
         <button class="btn btn--ghost" value="cancel" formnovalidate>Fechar</button>
-        <button class="btn btn--primary" value="save">Salvar</button>
       </footer>
     </form>
   </dialog>

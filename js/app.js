@@ -2,7 +2,7 @@
  *
  * Os vídeos publicados ficam em videos.json (no repositório).
  * No modo administrador (abra a página com #/admin uma vez), dá para
- * adicionar e remover vídeos; as mudanças ficam num rascunho local até
+ * adicionar, editar e remover vídeos; as mudanças ficam num rascunho local até
  * você tocar em "Publicar", que grava o videos.json pelo GitHub.
  */
 (() => {
@@ -164,17 +164,18 @@
     bar.hidden = n === 0;
     document.body.classList.toggle("has-pending", n > 0);
     $("#pendingText").textContent = n === 1 ? "1 alteração não publicada" : `${n} alterações não publicadas`;
+    if ($("#settingsDialog").open) updateSettingsStatus();
   }
 
   async function publish() {
     if (!state.draft) return toast("Nada para publicar.");
     if (!state.cfg.token) {
       openSettings();
-      return toast("Configure o token do GitHub para publicar.");
+      return toast("Este navegador ainda não tem a chave de publicação.");
     }
-    const btn = $("#publishBtn");
-    btn.disabled = true;
-    btn.textContent = "Publicando…";
+    const btns = [$("#publishBtn"), $("#pubPublishBtn")];
+    const labels = btns.map(b => b.innerHTML);
+    btns.forEach(b => { b.disabled = true; b.textContent = "Publicando…"; });
     try {
       let sha;
       const cur = await fetch(ghContentsUrl(), { headers: ghHeaders(), cache: "no-store" });
@@ -201,17 +202,17 @@
     } catch (e) {
       toast("Não consegui publicar: " + e.message, 7000);
     } finally {
-      btn.disabled = false;
-      btn.textContent = "Publicar";
+      btns.forEach((b, i) => { b.disabled = false; b.innerHTML = labels[i]; });
+      updateSettingsStatus();
     }
   }
 
   async function ghError(r) {
     try {
       const j = await r.json();
-      if (r.status === 401) return "token inválido ou expirado.";
-      if (r.status === 403) return "o token não tem permissão de escrita neste repositório.";
-      if (r.status === 404) return "repositório ou branch não encontrado.";
+      if (r.status === 401) return "chave inválida ou expirada. Crie uma nova em Publicar no site → Chave de publicação.";
+      if (r.status === 403) return "a chave não tem permissão para alterar este site (Contents precisa estar em Read and write).";
+      if (r.status === 404) return "a chave não dá acesso a este repositório (confira o Repository access), ou o repositório mudou de nome.";
       if (r.status === 409) return "o arquivo mudou no GitHub; recarregue a página e tente de novo.";
       return j.message || "HTTP " + r.status;
     } catch { return "HTTP " + r.status; }
@@ -223,7 +224,10 @@
     const tags = (v.tags || []).slice(0, 3).map(t => `<span class="tag">${esc(t)}</span>`).join("");
     const meta = [v.channel, ago(v.addedAt)].filter(Boolean).map(esc).join(" • ");
     const menu = state.admin
-      ? `<button class="icon-btn card__menu" data-remove="${esc(v.id)}" aria-label="Remover vídeo" title="Remover vídeo"><span class="ms">delete</span></button>`
+      ? `<div class="card__menu">
+          <button class="icon-btn" data-edit="${esc(v.id)}" aria-label="Editar vídeo" title="Editar vídeo"><span class="ms">edit</span></button>
+          <button class="icon-btn" data-remove="${esc(v.id)}" aria-label="Remover vídeo" title="Remover vídeo"><span class="ms">delete</span></button>
+        </div>`
       : "";
     return `
       <article class="card ${compact ? "compact" : ""}">
@@ -288,7 +292,9 @@
     const list = sortByDate(videos()).filter(v => state.tag === "Todos" || (v.tags || []).includes(state.tag));
     let body;
     if (!state.loaded) body = `<div class="grid">${skeletons(6)}</div>`;
-    else if (state.loadError && !videos().length) body = emptyHTML({ icon: "wifi_off", title: "Não consegui carregar os vídeos", text: "Verifique sua conexão e recarregue a página." });
+    else if (state.loadError && !videos().length) body = emptyHTML({ icon: "wifi_off", title: "Não consegui carregar os vídeos", text: location.protocol === "file:"
+      ? "Aberto direto do arquivo, o navegador bloqueia a lista de vídeos. Use o abrir-site.cmd da pasta do projeto."
+      : "Verifique sua conexão e recarregue a página." });
     else if (!list.length) body = emptyHTML({
       title: "Nenhum vídeo por aqui ainda",
       text: state.admin ? "Cole o link de um vídeo do YouTube para começar." : "Os primeiros vídeos de border collie chegam em breve.",
@@ -347,7 +353,8 @@
                 <button class="pill ${fav ? "on" : ""}" data-fav="${esc(v.id)}"><span class="ms">favorite</span>${fav ? "Favoritado" : "Favoritar"}</button>
                 <button class="pill" data-share="${esc(v.id)}"><span class="ms">share</span>Compartilhar</button>
                 <a class="pill pill--red" href="https://www.youtube.com/watch?v=${esc(v.id)}" target="_blank" rel="noopener"><span class="ms fill">smart_display</span>YouTube</a>
-                ${state.admin ? `<button class="pill" data-remove="${esc(v.id)}"><span class="ms">delete</span>Remover</button>` : ""}
+                ${state.admin ? `<button class="pill" data-edit="${esc(v.id)}"><span class="ms">edit</span>Editar</button>
+                <button class="pill" data-remove="${esc(v.id)}"><span class="ms">delete</span>Remover</button>` : ""}
               </div>
             </div>
             <div class="desc">
@@ -445,14 +452,43 @@
   $("#addThumb").addEventListener("error", e => { e.target.style.visibility = "hidden"; });
   $("#addThumb").addEventListener("load", e => { e.target.style.visibility = ""; });
   let metaReq = 0;
+  let editingId = null; // id do vídeo em edição; null = adicionando
+
+  function setAddMode(editing) {
+    $("#addHeading").textContent = editing ? "Editar vídeo" : "Adicionar vídeo";
+    $("#addSubmit").textContent = editing ? "Salvar" : "Adicionar";
+    $("#addUrl").readOnly = editing;
+  }
 
   function openAdd() {
     closeMenu();
+    editingId = null;
+    setAddMode(false);
     $("#addForm").reset();
     $("#addPreview").hidden = true;
     renderTagSuggest();
     addDlg.showModal();
     setTimeout(() => $("#addUrl").focus(), 50);
+  }
+
+  function openEdit(id) {
+    const v = videos().find(x => x.id === id);
+    if (!v) return;
+    closeMenu();
+    editingId = id;
+    setAddMode(true);
+    $("#addForm").reset();
+    $("#addUrl").value = `https://www.youtube.com/watch?v=${v.id}`;
+    $("#addTitle").value = v.title || "";
+    $("#addChannel").value = v.channel || "";
+    $("#addTags").value = (v.tags || []).join(", ");
+    $("#addDesc").value = v.description || "";
+    $("#addThumb").src = thumb(v.id, "mqdefault");
+    $("#addStatus").textContent = "O link não muda; edite os outros campos.";
+    $("#addPreview").hidden = false;
+    renderTagSuggest();
+    addDlg.showModal();
+    setTimeout(() => $("#addTitle").focus(), 50);
   }
 
   function renderTagSuggest() {
@@ -509,6 +545,20 @@
 
   $("#addForm").addEventListener("submit", e => {
     if (e.submitter?.value !== "add") return;
+    if (editingId) {
+      const id = editingId;
+      editingId = null;
+      setDraft(videos().map(v => v.id !== id ? v : {
+        ...v,
+        title: $("#addTitle").value.trim(),
+        channel: $("#addChannel").value.trim(),
+        tags: [...new Set($("#addTags").value.split(",").map(s => s.trim()).filter(Boolean))],
+        description: $("#addDesc").value.trim(),
+      }));
+      render();
+      toast(state.cfg.token ? "Vídeo atualizado. Toque em Publicar para todos verem." : "Vídeo atualizado (só neste navegador por enquanto).");
+      return;
+    }
     const id = parseYouTubeId($("#addUrl").value);
     if (!id) { e.preventDefault(); toast("Cole um link válido do YouTube."); return; }
     if (videos().some(v => v.id === id)) { e.preventDefault(); toast("Esse vídeo já está na página."); return; }
@@ -532,20 +582,86 @@
     $("#cfgRepo").value = state.cfg.repo;
     $("#cfgBranch").value = state.cfg.branch;
     $("#cfgToken").value = state.cfg.token;
+    // Sem chave, já abre a seção da chave; o resto fica recolhido.
+    $("#pubKeySection").open = !state.cfg.token;
+    updateSettingsStatus();
     $("#settingsDialog").showModal();
   }
 
-  $("#settingsForm").addEventListener("submit", e => {
-    if (e.submitter?.value !== "save") return;
-    state.cfg = {
-      repo: $("#cfgRepo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, ""),
-      branch: $("#cfgBranch").value.trim() || DEFAULT_BRANCH,
-      token: $("#cfgToken").value.trim(),
-    };
+  // Mostra no topo do diálogo o que há para publicar e se este navegador tem chave.
+  function updateSettingsStatus() {
+    const n = state.admin ? diffCount() : 0;
+    const hasKey = !!state.cfg.token;
+    $("#pubPendingIcon").textContent = n ? "schedule" : "check_circle";
+    $("#pubPendingRow").classList.toggle("ok", !n);
+    $("#pubPendingText").textContent = n
+      ? `${n === 1 ? "1 alteração" : n + " alterações"} só neste navegador, ainda fora do site.`
+      : "Nada pendente: o site já mostra o mesmo que você vê aqui.";
+    $("#pubKeyIcon").textContent = hasKey ? "key" : "key_off";
+    $("#pubKeyRow").classList.toggle("ok", hasKey);
+    $("#pubKeyRow").classList.toggle("warn", !hasKey);
+    $("#pubKeyText").textContent = hasKey
+      ? "Este navegador tem a chave de publicação."
+      : "Este navegador ainda não tem a chave de publicação. Configure abaixo ou publique manualmente.";
+    $("#pubPublishBtn").disabled = !n || !hasKey;
+    $$(".repo-name").forEach(el => el.textContent = state.cfg.repo.split("/")[1] || state.cfg.repo);
+    $$(".repo-owner").forEach(el => el.textContent = state.cfg.repo.split("/")[0]);
+    $$(".repo-upload").forEach(a => a.href = `https://github.com/${state.cfg.repo}/upload/${encodeURIComponent(state.cfg.branch)}`);
+  }
+
+  function saveRepoCfg() {
+    state.cfg.repo = $("#cfgRepo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "") || DEFAULT_REPO;
+    state.cfg.branch = $("#cfgBranch").value.trim() || DEFAULT_BRANCH;
     store.set(KEY.cfg, state.cfg);
-    toast("Configurações salvas.");
-    updatePending();
+    updateSettingsStatus();
+  }
+  $("#cfgRepo").addEventListener("change", saveRepoCfg);
+  $("#cfgBranch").addEventListener("change", saveRepoCfg);
+
+  // Não deixa o Enter no campo da chave fechar o diálogo.
+  $("#settingsForm").addEventListener("submit", e => {
+    if (e.submitter?.value !== "cancel") e.preventDefault();
   });
+  $("#cfgToken").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); $("#saveTokenBtn").click(); }
+  });
+
+  $("#saveTokenBtn").addEventListener("click", async () => {
+    const token = $("#cfgToken").value.trim();
+    if (!token) return toast("Cole a chave no campo antes de salvar.");
+    const btn = $("#saveTokenBtn");
+    btn.disabled = true;
+    try {
+      state.cfg.token = token;
+      const r = await fetch(`https://api.github.com/repos/${state.cfg.repo}`, { headers: ghHeaders(), cache: "no-store" });
+      if (!r.ok) {
+        state.cfg.token = store.get(KEY.cfg, {}).token || "";
+        return toast("Chave não salva: " + await ghError(r), 7000);
+      }
+      store.set(KEY.cfg, state.cfg);
+      toast("Chave salva e funcionando neste navegador.");
+      $("#pubKeySection").open = false;
+      updatePending();
+      load(); // relê a lista direto do GitHub
+    } catch {
+      toast("Não consegui testar a chave. Verifique a internet e tente de novo.", 6000);
+    } finally {
+      btn.disabled = false;
+      updateSettingsStatus();
+    }
+  });
+
+  $("#clearTokenBtn").addEventListener("click", () => {
+    if (!state.cfg.token) return toast("Este navegador não tem chave salva.");
+    if (!confirm("Apagar a chave deste navegador? Para publicar daqui de novo será preciso colar a chave outra vez.")) return;
+    state.cfg.token = "";
+    store.set(KEY.cfg, state.cfg);
+    $("#cfgToken").value = "";
+    updateSettingsStatus();
+    toast("Chave apagada deste navegador.");
+  });
+
+  $("#pubPublishBtn").addEventListener("click", publish);
 
   $("#downloadJson").addEventListener("click", () => {
     const blob = new Blob([JSON.stringify({ videos: sortByDate(videos()) }, null, 2) + "\n"], { type: "application/json" });
@@ -591,7 +707,7 @@
 
   // ---------- eventos globais ----------
   document.addEventListener("click", e => {
-    const t = e.target.closest("[data-tag],[data-action],[data-remove],[data-fav],[data-share]");
+    const t = e.target.closest("[data-tag],[data-action],[data-edit],[data-remove],[data-fav],[data-share]");
     if (!t) return;
     if (t.dataset.tag) {
       state.tag = t.dataset.tag;
@@ -601,6 +717,7 @@
     }
     if (t.dataset.action === "add") return openAdd();
     if (t.dataset.action === "settings") return openSettings();
+    if (t.dataset.edit) { e.preventDefault(); return openEdit(t.dataset.edit); }
     if (t.dataset.remove) { e.preventDefault(); return removeVideo(t.dataset.remove); }
     if (t.dataset.fav) return toggleFav(t.dataset.fav);
     if (t.dataset.share) return share(t.dataset.share);

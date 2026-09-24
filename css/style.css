@@ -465,7 +465,7 @@ body.menu-open::after {
   padding: 2px 8px;
   border-radius: 10px;
 }
-.card__menu { margin: -6px -10px 0 0; }
+.card__menu { display: flex; flex-shrink: 0; margin: -6px -10px 0 0; }
 
 /* ---------- Empty state ---------- */
 
@@ -683,7 +683,63 @@ body.menu-open::after {
 .help summary { cursor: pointer; font-weight: 500; color: var(--red); }
 .help ol { padding-left: 20px; color: var(--text-2); }
 .help a { color: var(--red); text-decoration: underline; }
-.settings-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.settings-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+
+/* diálogo de publicação */
+.pub-status {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+}
+.pub-status__row { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.4; }
+.pub-status__row .ms { font-size: 20px; color: var(--text-2); flex-shrink: 0; }
+.pub-status__row.ok .ms { color: #1e8e3e; }
+.pub-status__row.warn .ms { color: var(--red); }
+.pub-status__btn { justify-self: start; margin-top: 2px; }
+
+.pub-section { border-top: 1px solid var(--line); padding: 4px 0; }
+.pub-section > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 0;
+  font-weight: 500;
+}
+.pub-section > summary::-webkit-details-marker { display: none; }
+.pub-section > summary::after {
+  content: "expand_more";
+  font-family: "Material Symbols Rounded";
+  font-size: 22px;
+  color: var(--text-2);
+  transition: transform .2s;
+}
+.pub-section[open] > summary::after { transform: rotate(180deg); }
+.pub-section > summary small { color: var(--text-2); font-weight: 400; margin-right: auto; }
+.pub-section p { font-size: 14px; line-height: 1.5; margin: 0 0 12px; }
+.pub-section code { font-size: 13px; background: var(--bg-soft); padding: 1px 5px; border-radius: 4px; }
+.pub-section a { color: var(--red); text-decoration: underline; }
+.pub-steps { padding-left: 20px; margin: 0 0 12px; font-size: 14px; line-height: 1.5; }
+.pub-steps li + li { margin-top: 6px; }
+.pub-section .help ol { font-size: 14px; line-height: 1.5; }
+.pub-section .help li + li { margin-top: 6px; }
+.pub-note {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  color: var(--text-2);
+}
+.pub-note .ms { font-size: 20px; flex-shrink: 0; }
+.pub-option { margin-bottom: 12px; }
+.pub-option .btn { margin-bottom: 6px; }
+.pub-option p { margin: 0; }
 
 /* ---------- Toast ---------- */
 
