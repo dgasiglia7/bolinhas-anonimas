@@ -258,7 +258,7 @@
     return `
       <section class="channel">
         <div class="channel__banner" role="img" aria-label="Padrão de pelagem blue merle">
-          <div class="channel__banner-text">Border Collie</div>
+          <div class="channel__banner-text">Border Collies</div>
         </div>
         <div class="channel__info">
           <img class="channel__avatar" src="assets/avatar.svg" alt="">
