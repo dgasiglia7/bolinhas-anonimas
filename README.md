@@ -48,3 +48,9 @@ node tools/servidor-local.mjs
 
 Abrir o `index.html` direto (clique duplo) não funciona: o navegador
 bloqueia a leitura do `videos.json` em endereços `file://`.
+
+## Cache no celular
+
+O `index.html` carrega `css/style.css?v=...` e `js/app.js?v=...`. Sempre que
+mudar o CSS ou o JS, troque esse número (por exemplo pela data) nas duas
+linhas, para que celulares e navegadores baixem a versão nova na hora.
